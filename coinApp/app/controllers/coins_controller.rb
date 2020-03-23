@@ -1,49 +1,72 @@
 
 class CoinsController < ApplicationController
     
+    #before_action  :authentication! 
 
     def index 
         @coins = Coin.all
-        render json: @coins
+          #shows all coins 
+        render json: {name: @coins, status: :ok}
+        
     end
 
     def show
-        @coin = Coin.find_by(id: params[:id])
-        render json: @coin, status: :ok
+        #shows a coin if it exists by it's id else let end know it's a bad request!
+
+
+        @coin = Coin.find_by(id: params[:id])  
+
+       if @coin
+        render json: {coin: @coin, status: :ok} 
+       else
+        render json:{coin: @coin, status: :bad_request, msg: 'Coin does not exist!'}
+       end
+          
     end
+
 
  
     def create 
-        @coin = Coin.new(name: params[:name], value: params[:value])
-        
-        if @coin.save!
-            @coin.count +=1
-            render json: @coin, status: :ok
-        else
-            render json: "error", status: :bad_request
-        end
+        #to initialy create a coin that doesnt exist if coin susccessfully saves then render ok else bad request 
 
+        @coin = Coin.new(coin_params)
+        
+        if @coin.save
+            
+            render json: {coin: @coin, status: :ok, msg: 'Coin created!'}
+        else
+            render json: {status: :bad_request, msg: 'invalid coin'} 
+        end
     end
 
 
     def destroy 
-        @coin = Coin.find_by(id: params[:id])
-        if @coin
-            @coin.count -=1  
-            @coin.destroy if @coin.count = 0
-            redirect_to coins_url
+        # if coin exists by id destroy it else bad request 
+        @coin = Coin.find_by(id: params[:id]) 
+
+        if @coin #checking to see if coin exists (is it nil?)
+            
+            #then render fun!
+            render json: {coin: @coin, status: :ok, transaction: @transaction, msg: 'Coin removed from system!'}             
         end
     end
 
     def update
-        @coin = Coin.find_by(id: params[:id])
-        @coin.update(name: params[:name], id: params[:id])
-        render json: @coin 
+        #updates the coin 
+            @coin = Coin.find_by(coin_params) #finds by coin_params 
+
+            @coin.update(coin_params) #update 
+
+        render json: {coin: @coin, status: :ok, msg: 'Coin Updated!'}
     end
 
+
     def available
-        render json: Coin.total
+        #shows available balance 
+        render json: {'Available in USD': "$#{Coin.total}", status: :ok, msg: 'Your available balance!'}
     end
+
+   
 
     private
 
